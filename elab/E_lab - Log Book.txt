@@ -1,0 +1,123 @@
+https://www.businessinsider.com/what-is-a-google-verification-code
+
+https://support.google.com/accounts/answer/1064203?co=GENIE.Platform%3DAndroid&hl=en
+
+
+Bomba 
+
+https://programmersought.com/article/73314072962/
+
+https://fazecast.github.io/jSerialComm/
+
+
+SpringBoot - Serial
+
+https://github.com/westside/spring-boot-arduino
+
+<dependency>
+   <groupId>com.github.diegosep</groupId>
+   <artifactId>spring-serial-port-connector</artifactId>
+   <version>0.0.1-RELEASE</version>
+</dependency>
+
+Ler
+https://www.devmedia.com.br/comunicacao-serial-com-java-parte-i/3471
+http://www.ermicro.com/blog/?p=423 - motor
+
+Video
+https://www.youtube.com/watch?v=8rnCzYv_8WU&t=0s
+
+https://www.youtube.com/watch?v=Q8beQ6xW0s0
+
+JSerialComm
+https://www.youtube.com/watch?v=cw31L_OwX3A - plot graph
+https://www.youtube.com/watch?v=BdzzyEuUWYk - writes to arduino
+
+
+
+Network (Buster)
+sudo nano /etc/dhcpcd.conf
+sudo nano /etc/network/interfaces (?)
+sudo nano /etc/wpa_supplicant/wpa_supplicant.conf (?)
+
+Conda ELab
+conda create -n elab python=3.6
+source activate elab
+source deactivate
+
+Nginx
+https://www.raspberrypi.org/documentation/remote-access/web-server/nginx.md
+PHP not installed
+sudo nano /etc/nginx/sites-enabled/default
+
+https://www.digitalocean.com/community/tutorials/how-to-move-an-nginx-web-root-to-a-new-location-on-ubuntu-18-04
+sudo nginx -t
+sudo systemctl restart nginx
+
+
+Charts.js
+https://www.chartjs.org/docs/latest/getting-started/usage.html
+
+RPi Serial Ports
+sudo raspi-config
+
+dmesg | grep tty
+
+Java
+java --version
+update-alternatives --list java
+whereis java
+ls -l /usr/bin/java
+ls -l /etc/alternatives/java
+sudo update-alternatives --config java
+
+sudo update-alternatives --install "/usr/bin/java" "java" "/usr/lib/jvm/java-8-openjdk-armhf/bin/java" 1112
+sudo update-alternatives --install "/usr/bin/javac" "javac" "/usr/lib/jvm/java-8-openjdk-armhf/bin/javac" 1112
+
+sudo update-alternatives --set java /usr/lib/jvm/java-8-openjdk-armhf/bin/java
+sudo update-alternatives --set javac /usr/lib/jvm/java-8-openjdk-armhf/bin/javac
+
+
+./mvnw validate
+
+./mvnw spring-boot:run
+./mvnw clean
+./mvnw install -DskipTests
+java -jar /home/pi/PiShare/elab/webcomm/target/webcomm-0.0.1-SNAPSHOT.jar --upload.path=/home/pi/PiShare/elab/webcomm/uploads/
+https://pi4j.com/1.2/example/control.html
+https://mvnrepository.com/artifact/com.pi4j/pi4j-core - RPi 3 not woking with 1.4 set 1.3
+export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-armhf
+export PATH=$PATH:$JAVA_HOME/bin
+
+
+sudo nano /etc/systemd/system/webcomm.service
+
+[Unit]
+Description=Manage Java ELab-WebCom - Cavidade service
+
+[Service]
+WorkingDirectory=/root
+Environment='STDOUT=/dev/null'
+Environment='STDERR=/home/pi/PiShare/elab/webcomm/webcomm.log'
+ExecStart=/usr/bin/java -Xms2048m -Xmx4096m -jar /home/pi/PiShare/elab/webcomm/target/webcomm-0.0.1-SNAPSHOT.jar --upload.path=/home/pi/PiShare/elab/webcomm/uploads/ > ${STDOUT} 2 > ${STDERR}
+ExecStart=/usr/bin/java -Djava.security.egd=file:/dev/./urandom -Xms2048m -Xmx4096m -jar /home/pi/PiShare/elab/webcomm/target/webcomm-0.0.1-SNAPSHOT.jar --upload.path=/home/pi/PiShare/elab/webcomm/uploads/
+User=root
+Type=simple
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+
+
+systemctl daemon-reload
+
+sudo systemctl start webcomm.service
+sudo systemctl stop webcomm.service
+sudo systemctl status webcomm 
+
+journalctl -u webcomm.service -f
+journalctl -u webcomm.service -u mysql.service -f
+journalctl -u webcomm.service -u mysql.service -n 50 -r  --since "1 hour ago" 
+journalctl -u webcomm.service -n 150 -r  --since "2 days ago"
+journalctl -u mysql.service -n 50 -r  --since "2 days ago"

@@ -1,0 +1,253 @@
+<html>
+<head>
+<title>E Lab</title>
+<link rel="shortcut icon" type="image/png" href="">
+<link rel="shortcut icon" href="http://e-lab.ist.eu/rec.web/faviconElab.ico">
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src='https://cdn.plot.ly/plotly-latest.min.js'></script>
+
+<style>
+.serif {
+  font-family: "Times New Roman", Times, serif;
+}
+
+.sansserif {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.monospace {
+  font-family: "Lucida Console", Courier, monospace;
+}
+
+/* tell the container's children to float left: */
+.float-my-children > * {
+    float:left;
+    margin-right:5px;
+}
+
+/* this is called a clearfix. it makes sure that the container's children floats are cleared, without using extra markup */
+
+.clearfix {
+    *zoom:1 /* for IE */
+}
+
+.clearfix:before,
+.clearfix:after {
+    content: " ";
+    display: table;
+}
+
+.clearfix:after {
+    clear: both;
+}
+
+
+
+
+</style>
+</head>
+<body>
+	<br/>
+  <div class="clearfix float-my-children">
+    <div style="margin-left: 100px;margin-top: 10px;">
+      <img src="http://e-lab.ist.eu/rec.web/javax.faces.resource/elab_logo.png.faces?ln=images" >
+    </div>
+    <div style="margin-left: 5px;color:#86b300;">
+      <h1>- Cavidade</h1>
+    </div>
+  </div>
+	<br/>
+	<hr/>
+
+	<div style="margin-left: 30px;">
+		<p class="sansserif">Tempo :
+			<input id="time" type="text" name="time"/>
+			<button>Ligar GPIO</button>
+		</p>
+	</div>
+
+	<div class="sansserif" style="margin-left: 30px;">
+
+	<div>
+		<button onclick="myStopFunction()">Stop time</button>
+		<button onclick="myStartFunction()">Start time</button>
+	</div>
+
+	<hr/>
+	<div>
+	    <label hidden id="pin">Pin : </label>
+	</div>
+	<br/>
+	<div>
+		<label id="pressure">Pressure : </label>
+	</div>
+
+	<div>
+		<p id="demo"></p>
+	</div>
+
+	</div>
+
+  <div id='graph' style="margin-left: 50px; width: 1000px;"><!-- Plotly chart will be drawn inside this DIV --></div>
+
+	<!-- <div style="margin-left: 50px; width: 400px; height: 200px;">
+		<canvas id="myChart"  width="200" height="200"></canvas>
+	</div> -->
+
+
+
+  <br/>
+</body>
+<script type="text/javascript">
+
+// set RPi static IP
+var rpiRJ45IP = '192.168.1.81';  // RJ45
+var rpiWIFIIP = '192.168.1.82';  // WIFI
+var rpiIP = rpiRJ45IP;
+var openValvuleTime = 100;
+
+var time = "Inserir o tempo (s)"
+
+let myVar = setInterval(myTimer, 1000);
+
+
+
+
+
+
+
+
+// var ctx = document.getElementById('myChart');
+// var myChart = new Chart(ctx, {
+//     type: 'bar',
+//     data: {
+//         labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
+//         datasets: [{
+//             label: '# of Votes',
+//             data: [14, 19, 3, 5, 2, 3],
+//             backgroundColor: [
+//                 'rgba(255, 99, 132, 0.2)',
+//                 'rgba(54, 162, 235, 0.2)',
+//                 'rgba(255, 206, 86, 0.2)',
+//                 'rgba(75, 192, 192, 0.2)',
+//                 'rgba(153, 102, 255, 0.2)',
+//                 'rgba(255, 159, 64, 0.2)'
+//             ],
+//             borderColor: [
+//                 'rgba(255, 99, 132, 1)',
+//                 'rgba(54, 162, 235, 1)',
+//                 'rgba(255, 206, 86, 1)',
+//                 'rgba(75, 192, 192, 1)',
+//                 'rgba(153, 102, 255, 1)',
+//                 'rgba(255, 159, 64, 1)'
+//             ],
+//             borderWidth: 1
+//         }]
+//     },
+//     options: {
+//         scales: {
+//             y: {
+//                 beginAtZero: true
+//             }
+//         }
+//     }
+// });
+function rand() {
+  return Math.random();
+}
+
+Plotly.plot('graph', [{
+  y: [1].map(rand),
+  mode: 'lines+markers',
+  marker: {color: 'pink', size: 8},
+  line: {width: 4}
+}]);
+
+var cnt = 0;
+var interval = setInterval(function() {
+  Plotly.extendTraces('graph', {
+    y: [[rand()]]
+  }, [0])
+
+  cnt = cnt+1;
+  if(cnt > 100) {
+    Plotly.relayout('graph',{
+        xaxis: {
+            range: [cnt-100,cnt]
+        }
+    });
+    }
+}, 100);
+
+function myTimer() {
+  var d = new Date();
+  var t = d.toLocaleTimeString();
+  document.getElementById("demo").innerHTML = t;
+  getPressure();
+}
+
+function myStopFunction() {
+  clearInterval(myVar);
+}
+
+function myStartFunction() {
+  myVar = setInterval(myTimer, 100);
+}
+
+function putGPIO() {
+    time = $("#time").val();
+	// var url = 'http://' + rpiIP + ':8085/gpio/switch?pin=4&status=on&time=' + time;
+	var url = 'http://' + rpiIP + '/elab/gpio/switch?pin=4&status=on&time=' + time;
+    console.log('Button pressed time : ' +  time);
+	$.ajax({
+      url: url,      //Your api url
+      type: 'PUT',   //type is any HTTP method
+      data: {
+        data: time
+      },      //Data as js object
+      success: function (response) {
+		console.log('PUT Response Pin : ' +  response.pin);
+		console.log('PUT Response Pin : ' +  response.result);
+      }
+    });
+}
+
+function getPressure() {
+	var url = 'http://' + rpiIP + '/elab/pressure';
+	$.ajax({
+      url: url,      //Your api url
+      type: 'GET',   //type is any HTTP method
+      data: {
+        data: null
+      },      //Data as js object
+      success: function (response) {
+		console.log('GET Response Result : ' +  response.result);
+		document.getElementById('pressure').innerHTML = 'Pressure [mbar]: ' + response.pressure;
+      }
+    });
+}
+
+$(document).ready(function(){
+  $("input:text").val(time);
+
+	function startReadPresssure(times) {
+	  let numberSelected = 0;
+	  for (let i = 0; i < times; i++) {
+		console.log('Number selected' + numberSelected);
+		numberSelected++;
+		// document.getElementById('pressure').innerHTML = 'Pressure : ' + numberSelected;
+	  }
+	}
+
+	function stopReadPresssure() {
+	  clearInterval(myVar);
+	}
+
+  $("button").click(function(){
+	putGPIO();
+  });
+});
+
+</script>
+</html>
