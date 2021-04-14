@@ -1,14 +1,20 @@
 import serial
 import pfeiffer_vacuum_protocol as pvp
+from datetime import datetime
 
-def int_com_PPT200(COM):
-    # Open the serial port with a 1 second timeout
-    s = serial.Serial(COM, timeout=1)
-    return s
 
-def get_pressure(s):
+COM = 'COM3'
 
-    # Read the pressure from address 1 and print it
+# Open the serial port with a 1 second timeout
+s = serial.Serial(COM, timeout=1)
+
+
+while (True):
+    
+# Read the pressure from address 1 and print it
     p = pvp.read_pressure(s, 1)
-    # print("Pressure: {:.3f} bar".format(p))
-    return p
+    
+    now = datetime.now()
+    
+    current_time = now.strftime("%H:%M:%S")
+    print(current_time,"    Pressure: {:.5f} bar".format(p))
