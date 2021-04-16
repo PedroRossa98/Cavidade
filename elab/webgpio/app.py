@@ -7,7 +7,7 @@ from flask_cors import CORS
 from random import randrange
 
 # print ('Syst 1 : ', sys.path)
-sys.path.append('/home/pi/PiShare/elab/webgpio/modules')
+sys.path.append('/home/pi/Cavidade/elab/webgpio/modules')
 # print ('Syst 2 : ', sys.path)
 
 import PPT200 as PPT200
