@@ -1,1 +1,0 @@
-java -jar /home/pi/PiShare/elab/webcomm/target/webcomm-0.0.1-SNAPSHOT.jar --upload.path=/home/pi/PiShare/elab/webcomm/uploads/
