@@ -7,6 +7,8 @@ public interface IStreamReceiverPfeiffer {
 
     public void init();
     
+    public void execReadPressure();
+    
     public void readPressure(String port, Integer addr);
     
     public void setPressureValue(Double value);

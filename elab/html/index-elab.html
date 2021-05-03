@@ -102,7 +102,7 @@
 <script type="text/javascript">
 
 // set RPi static IP
-var rpiRJ45IP = '192.168.1.84';  // RJ45
+var rpiRJ45IP = '192.168.1.81';  // RJ45
 var rpiWIFIIP = '192.168.1.82';  // WIFI
 var rpiIP = rpiRJ45IP;
 var openValvuleTime = 100;
@@ -155,17 +155,23 @@ let myVar = setInterval(myTimer, 1000);
 
 function rand() {
   var reg = new RegExp('^[0-9\.]+$', 'g');
-  var pressure =  getPressure().toString();
-  var result1 = (pressure.toString().length > 1 && !isNaN(pressure)) ;
-  console.log("Result: ", result1," Pressao: ", pressure," primeiro: ",pressure.toString().length," segundo: ", !isNaN(pressure), " treceiro: ", reg.test(pressure));
-  if (result1)
-	{
-		return pressure;
-	}
-  else
-  {
-    return 0;
+  var xmlHttp = getPressure();
+//  setTimeout(() => {
+//      console.log(" xmlHttp: ", xmlHttp);
+//      console.log(" response: ", xmlHttp.response);
+//      var response = JSON.parse(xmlHttp.response);
+//      var pressure = response.pressure;
+//    }, 1000);
+    
+  var pressure = document.getElementById('pressure').innerHTML.substring(17, 22);  
+  console.log(" Pressao: ", pressure);
+  var result1 = (pressure.length > 1 && !isNaN(pressure)) ;
+  console.log("Result: ", result1," Pressao: ", pressure," primeiro: ", pressure.length," segundo: ", !isNaN(pressure), " treceiro: ", reg.test(pressure));
+  if (result1) {
+     return pressure;
   }
+
+  return 0;
 }
 
 
@@ -227,6 +233,8 @@ function putGPIO() {
 
 function getPressure() {
 	var url = 'http://' + rpiIP + '/elab/pressure';
+    var pressure = 0;
+    
 	return $.ajax({
       url: url,      //Your api url
       type: 'GET',   //type is any HTTP method
@@ -236,7 +244,7 @@ function getPressure() {
       success: function (response) {
 		console.log('GET Response Result : ' +  response.result);
 		document.getElementById('pressure').innerHTML = 'Pressure [mbar]: ' + response.pressure;
-		return response.pressure;
+		// return response.pressure;
       }
     });
 }

@@ -1,0 +1,110 @@
+<html>
+<head>
+<title>E Lab</title>
+<link rel="shortcut icon" type="image/png" href="">
+<link rel="shortcut icon" href="http://e-lab.ist.eu/rec.web/faviconElab.ico">
+<link rel="stylesheet" href="css/elab.css">
+<link rel="stylesheet" href="css/toggle-button.css">
+<link rel="stylesheet" href="css/tool-bar.css">
+
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src='https://cdn.plot.ly/plotly-latest.min.js'></script>
+<script src='config/env.js'></script>
+
+</head>
+<body>
+	<br/>
+  <div class="clearfix float-my-children">
+
+	
+    <div style="margin-left: 100px;margin-top: 10px;">
+      <img src="http://e-lab.ist.eu/rec.web/javax.faces.resource/elab_logo.png.faces?ln=images" >
+    </div>
+	
+    <div style="margin-left: 5px;color:#86b300;">
+      <h1>- Cavidade</h1>
+    </div>
+	</div>
+	<div style = "width:1600px;">
+	
+		<nav>
+			<ul>
+				<li><a href="/dev">Home</a></li>
+				<li><a href="/trabalho">Trabalho</a></li>
+				<li><a href="/test">Teste Vue</a></li>
+			</ul>
+		</nav>
+	</div>
+	
+	<br/>
+	
+	
+	<br/>
+	<hr/>	
+	
+
+    
+	
+
+
+	<div style="margin-left: 30px;">
+		<p class="sansserif">Tempo :
+			<input id="time" type="text" name="time"/>
+			<button>Ligar GPIO</button>
+		</p>
+	</div>
+
+	<div class="sansserif" style="margin-left: 30px;">
+
+	<div>
+		<button onclick="myStopFunction()">Stop time</button>
+		<button onclick="myStartFunction()">Start time</button>
+	</div>
+
+	<hr/>
+	<div>
+	    <label hidden id="pin">Pin : </label>
+	</div>
+	<br/>
+	<div>
+        <label id="pressure">Pressure : </label>
+	</div>
+
+	<div>
+		<p id="demo"></p>
+	</div>
+
+	</div>
+
+  <div id='graph' style="margin-left: 50px; width: 1000px;"><!-- Plotly chart will be drawn inside this DIV --></div>
+
+	<!-- <div style="margin-left: 50px; width: 400px; height: 200px;">
+		<canvas id="myChart"  width="200" height="200"></canvas>
+	</div> -->
+
+	<div>
+		<p id="ip"></p>
+	</div>
+  <script> 
+    console.log(env.IP, env.USER, env.HOSTNAME);
+    document.getElementById("ip").innerHTML = env.IP;
+  </script>
+  
+  <label class="switch">
+    <input type="checkbox" id="togBtn">
+     <div class="slider round">
+      <!--ADDED HTML -->
+      <span class="on">LIGAR</span>
+      <span class="off">DESLIGAR</span>
+      <!--END-->
+     </div>
+  </label>
+
+  <br/>
+</body>
+
+<script type="text/javascript" src='js/elab.js'></script>
+<script type="text/javascript" src='js/cavidade.js'></script>
+
+</html>

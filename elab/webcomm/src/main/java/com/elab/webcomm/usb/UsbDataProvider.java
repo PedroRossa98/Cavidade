@@ -29,6 +29,7 @@ public class UsbDataProvider implements SerialPortMessageListener {
     private static final String PFEIFFER = "streamReceiverPfeiffer";
     
     private static final Integer BAUDRATE_115200 = 115200;
+    private static final Integer BAUDRATE_9600 = 9600;
     private static final Integer DATABITS_8 = 8;
     private static final Integer STOPBITS_1 = SerialPort.ONE_STOP_BIT;
     private static final Integer PARITY_NONE = SerialPort.NO_PARITY;
@@ -80,13 +81,15 @@ public class UsbDataProvider implements SerialPortMessageListener {
         
         if (protocol == SerialProtocol.RS485) {
             serialPort.setComPortParameters(
-                BAUDRATE_115200,
+                BAUDRATE_9600,
                 DATABITS_8,
                 STOPBITS_1,
                 PARITY_NONE,
                 RS485_MODE
             );
         }
+        
+        // logger.debug("UsbDataProvider 1 : " + streamReceiver);
         
         if (!opened) {
             try {
@@ -104,9 +107,14 @@ public class UsbDataProvider implements SerialPortMessageListener {
             logger.debug("flushing " + String.valueOf(stale) + " stale bytes...");
             serialPort.readBytes(new byte[stale], stale);
         }
-        int flowcontrolMask = SerialPort.FLOW_CONTROL_RTS_ENABLED + SerialPort.FLOW_CONTROL_CTS_ENABLED + SerialPort.FLOW_CONTROL_DSR_ENABLED;
-        serialPort.setFlowControl(flowcontrolMask);
-      
+        
+        if (streamReceiver == ARINST) {
+            int flowcontrolMask = SerialPort.FLOW_CONTROL_RTS_ENABLED + SerialPort.FLOW_CONTROL_CTS_ENABLED + SerialPort.FLOW_CONTROL_DSR_ENABLED;
+            serialPort.setFlowControl(flowcontrolMask);
+        }
+        
+        // logger.debug("UsbDataProvider 2 : " + streamReceiver);
+        
         final boolean listening = serialPort.addDataListener(this);
         
         if (!listening) {
@@ -120,6 +128,8 @@ public class UsbDataProvider implements SerialPortMessageListener {
         }
         
         // logger.debug("connect : return !!! " + String.valueOf(serialPort.getSystemPortName()));
+        
+        // logger.debug("UsbDataProvider 3 : " + streamReceiver);
         
         return serialPort;
     }
@@ -143,7 +153,11 @@ public class UsbDataProvider implements SerialPortMessageListener {
     public int write(byte[] buffer) {
         
         if (serialPort != null) {
-            // logger.debug("write : buffer " + String.valueOf(buffer) + "    " + String.valueOf(buffer.length));
+            // logger.debug("UsbDataProvider write : buffer " + String.valueOf(buffer) + "    " + String.valueOf(buffer.length));
+            // for (byte b1: buffer) {
+            //     logger.debug("UsbDataProvider write byte : " + b1);
+            // }
+            
             return serialPort.writeBytes(buffer, buffer.length);
         }
         
@@ -153,13 +167,56 @@ public class UsbDataProvider implements SerialPortMessageListener {
     
     @Override
     public int getListeningEvents() {
-        return serialPort.LISTENING_EVENT_DATA_AVAILABLE; 
+        if (streamReceiver == PFEIFFER) {
+            return serialPort.LISTENING_EVENT_DATA_WRITTEN; 
+        }
+        
+        return serialPort.LISTENING_EVENT_DATA_AVAILABLE;
     }
 
 
     @Override
     public void serialEvent(SerialPortEvent serialPortEvent) {
-        // logger.debug("SerialEvent Type : " + String.valueOf(serialPortEvent.getEventType()));
+        logger.debug("UsbDataProvider SerialEvent streamReceiver : " + String.valueOf(streamReceiver));
+        logger.debug("UsbDataProvider SerialEvent Type : " + String.valueOf(serialPortEvent.getEventType()));
+        // logger.debug("UsbDataProvider SerialEvent LISTENING_EVENT_DATA_AVAILABLE : " + String.valueOf(serialPort.LISTENING_EVENT_DATA_AVAILABLE));
+        // logger.debug("UsbDataProvider SerialEvent LISTENING_EVENT_DATA_WRITTEN : " + String.valueOf(serialPort.LISTENING_EVENT_DATA_WRITTEN));
+        // logger.debug("UsbDataProvider SerialEvent LISTENING_EVENT_DATA_RECEIVED : " + String.valueOf(serialPort.LISTENING_EVENT_DATA_RECEIVED));
+
+        if (streamReceiver.equals(PFEIFFER)) {
+            if (serialPortEvent.getEventType() != SerialPort.LISTENING_EVENT_DATA_WRITTEN) {
+                return;
+            }        
+            
+            try {
+                Thread.sleep(100);
+                
+                Integer RETRY_TIMES = 1;
+                for (int i = 0; i < RETRY_TIMES; i++) {
+                    byte[] buffer = new byte[serialPortEvent.getSerialPort().bytesAvailable()];
+                    // logger.debug("UsbDataProvider SerialEvent bytesAvailable : " + buffer + "   " + String.valueOf(serialPortEvent.getSerialPort().bytesAvailable()));
+                    // logger.debug("UsbDataProvider SerialEvent buffer : " + String.valueOf(buffer.length));
+                    int read = serialPortEvent.getSerialPort().readBytes(buffer, buffer.length);
+                    logger.debug("UsbDataProvider SerialEvent read : " + String.valueOf(read));
+                    
+                    // for (byte charData : buffer) {
+                    //    logger.debug("UsbDataProvider SerialEvent charData : " + String.valueOf(charData) + "   " + (char) charData);
+                    // }
+                    
+                    if (read > 0) {
+                        disconnect();
+                        streamReceiverPfeiffer.processDeviceResponse(buffer);
+                    }
+                }
+
+                disconnect();
+            } catch (InterruptedException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            return;
+        }
+        
         
         if (serialPortEvent.getEventType() != SerialPort.LISTENING_EVENT_DATA_AVAILABLE) {
             return;
@@ -199,10 +256,7 @@ public class UsbDataProvider implements SerialPortMessageListener {
                     }
                 }
             }
-            
-            if (streamReceiver.equals(PFEIFFER)) {
-                streamReceiverPfeiffer.processDeviceResponse(buffer);
-            }
+
         }
 
     }

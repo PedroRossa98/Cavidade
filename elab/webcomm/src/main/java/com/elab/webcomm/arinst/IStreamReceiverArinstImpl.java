@@ -29,7 +29,7 @@ public class IStreamReceiverArinstImpl implements IStreamReceiverArinst {
 
     private static final double AMPLITUDE_ACCURACY_COEFFICIENT      = 10.0;     // one decimal place
 
-    private static final long intermediateFrequency = 500000L;
+    private static final long intermediateFrequency                 = 500000L;
     
     private UsbDataProvider usbDataProvider;
     

@@ -10,6 +10,7 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,6 +18,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -27,6 +29,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.util.FileCopyUtils;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -34,8 +37,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.elab.webcomm.arinst.IStreamReceiverArinst;
+import com.elab.webcomm.arinst.ReceiverArinst22;
 import com.elab.webcomm.entity.ArinstParamScan;
+import com.elab.webcomm.gpio.RPiGPIO;
 import com.elab.webcomm.pfeiffer.IStreamReceiverPfeiffer;
+import com.elab.webcomm.pfeiffer.ReceiverPfeifferPressure;
 import com.elab.webcomm.usb.UsbDataProvider;
 import com.elab.webcomm.utils.CSVWriterUtils;
 import com.pi4j.io.gpio.GpioController;
@@ -57,7 +63,16 @@ public class SerialController {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    private static final int RETRY_TIMES   = 3;
+
+    private static final int      RETRY_TIMES         = 3;
+    
+    private static final String   WIN_ARINST_PORT     = "COM9";
+    private static final String   WIN_PFEIFFER_PORT   = "COM10";
+    private static final String   RPI_ARINST_PORT     = "/dev/ttyACM0";
+    private static final String   RPI_PFEIFFER_PORT   = "/dev/ttyUSB0";    
+    
+    Boolean isWindows = System.getProperty("os.name").toLowerCase().startsWith("windows");
+    
     
     @Value("${upload.path}")
     private String EXTERNAL_FILE_PATH;
@@ -95,11 +110,86 @@ public class SerialController {
     
     
     @RequestMapping(value = "/pressure", method = RequestMethod.GET)
-    public Double getDevicePressureData(HttpServletRequest request,
-                                        HttpServletResponse response) {
+    public String getDevicePressureData(HttpServletRequest request,
+                                        HttpServletResponse response,
+                                        @RequestParam(required = false, name="port") String port,
+                                        @RequestParam(required = false, name="addr") Integer addr) {
 
+        DecimalFormat df2 = new DecimalFormat("0.000");
+        
         Double invalidPressure = -1.0;
         logger.debug("getDevicePressureData : ");
+        
+        if (port == null) {
+            port = isWindows ? WIN_PFEIFFER_PORT : RPI_PFEIFFER_PORT;
+        }
+        
+        if (addr == null) {
+            addr = 1;
+        }
+        
+        Boolean python = false;
+        Boolean quick = true;
+        
+        try {
+            if (python) {
+                if (quick) {
+                    Double pressureValue = ReceiverPfeifferPressure.execReadPressure();
+                    return df2.format(pressureValue);
+                } else {
+                    streamReceiverPfeiffer.execReadPressure();
+                    Thread.sleep(1000);
+                }
+            } else {
+                if (quick) {
+                    Double pressureValue = ReceiverPfeifferPressure.readPressure(port, addr);
+                    return df2.format(pressureValue);
+                } else {
+                    streamReceiverPfeiffer.init();
+                    streamReceiverPfeiffer.readPressure(port, addr);
+                    Thread.sleep(500);
+                }
+            }
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
+        Double delta = 0.000001d;
+        
+        for (int i = 0; i < RETRY_TIMES; i++) {
+            logger.debug("getDevicePressureData RETRY_TIMES : " + i);
+            Double pressureValue = streamReceiverPfeiffer.getPressureValue();
+            
+            // logger.debug("SerialController getDevicePressureData pressureValue : " + String.valueOf(pressureValue));
+            // logger.debug("SerialController getDevicePressureData invalidPressure : " + String.valueOf(invalidPressure));
+            // logger.debug("SerialController getDevicePressureData compare : " + String.valueOf(pressureValue != invalidPressure));
+            logger.debug("SerialController getDevicePressureData compare 2 : " + String.valueOf(Math.abs(pressureValue - invalidPressure) > delta));
+            
+            if (Math.abs(pressureValue - invalidPressure) > delta) {
+                logger.debug("SerialController getDevicePressureData pressureValue : " + df2.format(pressureValue));
+                return df2.format(pressureValue);
+            }            
+            
+            try {
+                // wait 1-5 sec. and try again
+                Thread.sleep(100);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        logger.debug("SerialController getDevicePressureData pressureValue : " + df2.format(invalidPressure));
+        
+        return df2.format(invalidPressure);
+    }
+
+    
+    @RequestMapping(value = "/pressuremock", method = RequestMethod.GET)
+    public Double getMockDevicePressureData(HttpServletRequest request,
+                                            HttpServletResponse response) {
+
+        Double invalidPressure = -1.0;
+        logger.debug("getMockDevicePressureData : ");
         streamReceiverPfeiffer.setPressureValue(invalidPressure);
         // streamReceiverPfeiffer.setPressureValue(345.3);
         
@@ -121,6 +211,7 @@ public class SerialController {
         return streamReceiverPfeiffer.getPressureValue();
     }
 
+    
     // http://localhost:8091/elab/arinst?port=COM9&start=3386000000&stop=3891000000&step=500000
     @RequestMapping(value = "/arinst", method = RequestMethod.GET)
     public List <Map<String, String>> getArinstData(HttpServletRequest request,
@@ -132,18 +223,22 @@ public class SerialController {
         
         
         if (port == null) {
-            port = "COM9";
+            port = isWindows ? WIN_ARINST_PORT : RPI_ARINST_PORT;
         }
         
-        streamReceiverArinst.init();
+        Boolean mathlab = true;
         
         try {
-            Boolean scan = streamReceiverArinst.startScan(port, Long.valueOf(start), Long.valueOf(stop), Long.valueOf(step));
-            
-            if (!scan) {
-                return new ArrayList <Map<String, String>> ();
+            if (mathlab) {
+                return ReceiverArinst22.startScan(port, Long.valueOf(start), Long.valueOf(stop), Long.valueOf(step));
+            } else {
+                streamReceiverArinst.init();
+                Boolean scan = streamReceiverArinst.startScan(port, Long.valueOf(start), Long.valueOf(stop), Long.valueOf(step));
+                
+                if (!scan) {
+                    return new ArrayList <Map<String, String>> ();
+                }
             }
-            
         } catch (NumberFormatException e) {
             // TODO Auto-generated catch block
             // e.printStackTrace();
@@ -173,6 +268,85 @@ public class SerialController {
         
         return new ArrayList <Map<String, String>> ();
     }
+
+    
+    @RequestMapping(value = "/arinst/csv", method = RequestMethod.GET)
+    public void getArinstCSV(HttpServletRequest request,
+                             HttpServletResponse response,
+                             @RequestParam(required = false, name="port") String port,
+                             @RequestParam(required = true, name="start") String start,
+                             @RequestParam(required = true, name="stop") String stop,
+                             @RequestParam(required = true, name="step") String step) {
+        
+        
+        if (port == null) {
+            port = isWindows ? WIN_ARINST_PORT : RPI_ARINST_PORT;
+        }
+        
+        streamReceiverArinst.init();
+        
+        try {
+            Boolean scan = streamReceiverArinst.startScan(port, Long.valueOf(start), Long.valueOf(stop), Long.valueOf(step));
+            
+            if (!scan) {
+                return;
+            }
+            
+        } catch (NumberFormatException e) {
+            // TODO Auto-generated catch block
+            // e.printStackTrace();
+            return;
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            // e.printStackTrace();
+            return;
+        }
+        
+        for (int i = 0; i < RETRY_TIMES; i++) {
+            
+            try {
+                // wait 1-5 sec. and try again
+                Thread.sleep((new Random().nextInt(5) + 1) * 1000);
+            } catch (Exception e) {
+                // e.printStackTrace();
+                return;
+            }
+            
+            // logger.debug("getArinstData retry : " + String.valueOf(i));
+            
+            if (streamReceiverArinst.isComplete()) {
+                List<Map<String, String>> data = streamReceiverArinst.getInfoList();
+                
+                String strData = toCSV(data);
+                // logger.debug("getArinstData strData : " + String.valueOf(strData));
+                
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd_HHmmss");
+                Date date = new Date();
+                String downloadName = "arinst" + "_" + sdf.format(date) + ".csv";
+                
+                String csvFileName = EXTERNAL_FILE_PATH + downloadName;
+                
+                Writer file = null;
+                
+                try {
+                    file = new OutputStreamWriter(new FileOutputStream(csvFileName), StandardCharsets.UTF_8);
+                    
+                    file.write(strData);
+                    
+                    file.flush();
+                    file.close();
+                    
+                    downloadFile(response, downloadName, downloadName);
+                } catch (IOException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            }
+        }
+        
+
+    }
+
     
     // http://localhost:8091/elab/arinst
     //    {
@@ -188,7 +362,7 @@ public class SerialController {
         
         
         if (arinstParamScan.getPort() == null) {
-            arinstParamScan.setPort("COM9");
+            arinstParamScan.setPort(isWindows ? WIN_ARINST_PORT : RPI_ARINST_PORT);
         }
         
         streamReceiverArinst.init();
@@ -231,60 +405,20 @@ public class SerialController {
         return new ArrayList <Map<String, String>> ();
     }
 
+ 
     
+    // https://pi4j.com/1.2/example/control.html
     @RequestMapping(method = RequestMethod.GET, value = "/gpio")
     public void setGPIO(HttpServletRequest request,
                         HttpServletResponse response) throws InterruptedException {
         
-        logger.debug("<--Pi4J--> GPIO Control Example ... started.");
-
-        // create gpio controller
-        final GpioController gpio = GpioFactory.getInstance();
-
-        // provision gpio pin #00 as an output pin and turn on
-        final GpioPinDigitalOutput pin = gpio.provisionDigitalOutputPin(RaspiPin.GPIO_00, "MyLED", PinState.HIGH);
-
-        // set shutdown state for this pin
-        pin.setShutdownOptions(true, PinState.LOW);
-
-        logger.debug("--> GPIO state should be: ON");
-
-        Thread.sleep(5000);
-
-        // turn off gpio pin #01
-        pin.low();
-        logger.debug("--> GPIO state should be: OFF");
-
-        Thread.sleep(5000);
-
-        // toggle the current state of gpio pin #01 (should turn on)
-        pin.toggle();
-        logger.debug("--> GPIO state should be: ON");
-
-        Thread.sleep(5000);
-
-        // toggle the current state of gpio pin #01  (should turn off)
-        pin.toggle();
-        logger.debug("--> GPIO state should be: OFF");
-
-        Thread.sleep(5000);
-
-        // turn on gpio pin #01 for 1 second and then off
-        logger.debug("--> GPIO state should be: ON for only 1 second");
-        pin.pulse(1000, true); // set second argument to 'true' use a blocking call
-
-        // stop all GPIO activity/threads by shutting down the GPIO controller
-        // (this method will forcefully shutdown all GPIO monitoring threads and scheduled tasks)
-        gpio.shutdown();
-
-        logger.debug("Exiting ControlGpioExample");
-        
+         RPiGPIO.GPIOTest();
     }
 
     
-    @RequestMapping(method = RequestMethod.GET, value = "/arinst/csv")
-    public void getArinstScanCSV(HttpServletRequest request,
-                                 HttpServletResponse response) {
+    @RequestMapping(method = RequestMethod.GET, value = "/arinst/data")
+    public void getArinstScanData(HttpServletRequest request,
+                                  HttpServletResponse response) {
         
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd_HHmmss");
         Date date = new Date();
@@ -333,6 +467,49 @@ public class SerialController {
     }
     
     
+    @RequestMapping(method = RequestMethod.GET, value = "/arinst/list")
+    public ArrayList<String> getArinstScanList(HttpServletRequest request,
+                                 HttpServletResponse response) {
+        // Creates an array in which we will store the names of files and directories
+        String[] pathnames;
+        ArrayList<String> fileName = new ArrayList<String>();
+        // Creates a new File instance by converting the given pathname string
+        // into an abstract pathname
+        File f = new File(EXTERNAL_FILE_PATH);
+
+        // Populates the array with names of files and directories
+        pathnames = f.list();
+
+        // For each pathname in the pathnames array
+        for (String pathname : pathnames) {
+            // Print the names of files and directories
+            System.out.println(pathname);
+            fileName.add(pathname);
+        }
+        
+        return fileName;
+    }
+    
+    
+    @RequestMapping(method = RequestMethod.GET, value = "/arinst/csv/{filename}")
+    public void getArinstScanCSVFile(HttpServletRequest request,
+                                     HttpServletResponse response,
+                                     @PathVariable("filename") String filename) {
+        
+        String downloadName = filename;
+ 
+        logger.debug("getArinstScanCSV downloadName : " + String.valueOf(downloadName));
+
+        try {
+            
+            downloadFile(response, downloadName, downloadName);
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+
+    
     private void downloadFile(HttpServletResponse response, 
                               String fileName, String downloadName) throws IOException {
 
@@ -376,5 +553,21 @@ public class SerialController {
             FileCopyUtils.copy(inputStream, response.getOutputStream());
         }
     }
-
+    
+    
+    private String toCSV(List<Map<String, String>> list) {
+        List<String> headers = list.stream().flatMap(map -> map.keySet().stream()).distinct().collect(Collectors.toList());
+        final StringBuffer sb = new StringBuffer();
+        for (int i = 0; i < headers.size(); i++) {
+            sb.append(headers.get(i));
+            sb.append(i == headers.size()-1 ? "\n" : ",");
+        }
+        for (Map<String, String> map : list) {
+            for (int i = 0; i < headers.size(); i++) {
+                sb.append(map.get(headers.get(i)));
+                sb.append(i == headers.size()-1 ? "\n" : ",");
+            }
+        }
+        return sb.toString();
+    }
 }
