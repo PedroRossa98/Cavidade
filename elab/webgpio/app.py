@@ -1,6 +1,8 @@
 import sys
 import os
 import configparser
+import logging
+import time
 import RPi.GPIO as GPIO
 
 from flask import Flask, request, jsonify, session, Response
@@ -12,6 +14,11 @@ from random import randrange
 # print ('Syst 1 : ', sys.path)
 sys.path.append('/home/pi/Cavidade/elab/webgpio/modules')
 # print ('Syst 2 : ', sys.path)
+
+
+import globals
+import serialopen as SerialOpen
+import arinstrunning as ArinstRunning
 
 import PPT200 as PPT200
 import Analisador_v2 as arinst
@@ -27,15 +34,25 @@ app.config['SESSION_TYPE'] = 'filesystem'
     
 
 app.debug = False
+#app.logger.disabled = False
+
+
+
+logging.basicConfig(level=logging.DEBUG) # CRITICAL, ERROR, WARNING, INFO, and DEBUG 
+
+log = logging.getLogger('werkzeug')
+log.disabled = True
 
 CORS(app)
 
 val.int_valvulas()
 # Set button and PIR sensor pins as an input
-# GPIO.setup(button, GPIO.IN)   
-# GPIO.setup(senPIR, GPIO.IN)
+#GPIO.setup(button, GPIO.IN)
+#GPIO.setup(senPIR, GPIO.IN)
 
-@app.route('/')
+
+ 
+@app.route('/') 
 def hello_world():
     return 'Hello, Nice!'
 
@@ -76,13 +93,18 @@ def gpio_switch():
 @app.route('/pressure', methods=['GET'])
 def ppt_pressure():
     if request.method == 'GET':
+        if ArinstRunning.get_ArinstRunning():
+            return jsonify({'pressure': '', 'result': 'Arinst is running'})
         
+        SerialOpen.set_SerialOpen(True)
         serial = PPT200.int_com_PPT200('/dev/ttyUSB0')
         pressure = PPT200.get_pressure(serial)
         serial.close()
+
+        SerialOpen.set_SerialOpen(False)
         return jsonify({'pressure': pressure, 'result': 'OK!'})
         
-    return ''
+    return jsonify({'pressure': ' ', 'result': 'M'})
 
 
 @app.route('/pressure/start', methods=['GET'])
@@ -105,17 +127,26 @@ def download_pressure():
 @app.route('/arinst', methods=['GET'])
 def arinst_data():
     if request.method == 'GET':
+        count = 0
+        serial = SerialOpen.get_SerialOpen()
+        ArinstRunning.set_ArinstRunning(True)
+        while serial and count < 10:
+            time.sleep(0.2)
+            serial = SerialOpen.get_SerialOpen()
+            app.logger.debug('Serial : {}   {}'.format(serial, count))
+            count += 1
+        if count < 10:
+            print (request.args)
+            print ('Start '+ request.args.get('start'))
+            print ('Stop '+ request.args.get('stop'))
+            print ('Step '+ request.args.get('step'))
+            print ('Itera '+ request.args.get('n_itera'))
         
-        print (request.args)
-        print ('Start '+ request.args.get('start'))
-        print ('Stop '+ request.args.get('stop'))
-        print ('Step '+ request.args.get('step'))
-        print ('Itera '+ request.args.get('n_itera'))
-        
-        data = arinst.arnist('/dev/ttyACM0',int(request.args.get('start')), int(request.args.get('stop')), int(request.args.get('step')), int(request.args.get('n_itera')))
-        #print (data)
-        return jsonify(data)
-        
+            data = arinst.arnist('/dev/ttyACM0',int(request.args.get('start')), int(request.args.get('stop')), int(request.args.get('step')), int(request.args.get('n_itera')))
+            #print (data)
+            ArinstRunning.set_ArinstRunning(False)
+            return jsonify(data)
+    ArinstRunning.set_ArinstRunning(False)
     return ''
     
 
@@ -219,5 +250,5 @@ def gpio_put_status():
 
 
 if __name__ == '__main__':
-    
+    globals.initialize()
     app.run('0.0.0.0', 8085)

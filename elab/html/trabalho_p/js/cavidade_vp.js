@@ -19,8 +19,8 @@ var step_f = "500000"
 var n_itera = "5"
 var file_names = null;
 
-//let myPressure_1 = setInterval(getPressure,100)
-let myPressure_1 = null;
+let myPressure_1 = setInterval(getPressure,100)
+//let myPressure_1 = null;
 
 /* var ctx = document.getElementById('myChart');
 var myChart = new Chart(ctx, {
