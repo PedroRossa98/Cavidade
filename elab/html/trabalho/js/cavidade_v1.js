@@ -2,7 +2,7 @@
 console.log('Cavidade', env.IP, env.USER, env.HOSTNAME);
 
 //set RPi static IP
-var rpiRJ45IP = '192.168.1.81';  //RJ45
+var rpiRJ45IP = '192.168.1.84';  //RJ45
 var rpiWIFIIP = '192.168.1.82';  //WIFI
 var rpiIP = rpiRJ45IP;
 var openValvuleTime = 100;
@@ -102,7 +102,7 @@ function getPressure() {
 }
 
 function getCsv() {
-	var url = 'http://' + rpiIP + '/comm/arinst/list';
+	var url = 'http://' + rpiIP + '/elab/arinst/list';
 	$.ajax({
       url: url,      //Your api url
       type: 'GET',   //type is any HTTP method
@@ -151,7 +151,8 @@ function putArinst() {
 
  
                 //the array
-function printBtn(listBrand) {
+function generateButtonsFiles () {
+	listBrand = getCsv();
     for (var i = 0; i < listBrand.length; i++) {
         var btn = document.createElement("button");
         btn.setAttribute("type", "file");

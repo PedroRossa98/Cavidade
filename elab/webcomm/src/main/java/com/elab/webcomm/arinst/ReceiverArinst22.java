@@ -201,7 +201,7 @@ public class ReceiverArinst22 {
 
                 // String strData = new String(buffer, StandardCharsets.UTF_8);
                 // logger.debug("ReceiverArinst22 scanData buffer length : " + String.valueOf(buffer.length));
-                // logger.debug("ReceiverArinst22 scanData buffer strData : " + String.valueOf(strData));
+                // logger.debug("ReceiverArinst22 scanData buffer strData : " + String.valueOf(buffer));
                 
                 if (read > 0) {
                     try {
@@ -213,14 +213,16 @@ public class ReceiverArinst22 {
                 }
             }
             
+
         } catch (InterruptedException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
     
+        
         // logger.debug("ReceiverArinst22 scanData buffer outputStream : " + String.valueOf(outputStream.size()));
         // logger.debug("ReceiverArinst22 scanData buffer outputStream : " + String.valueOf(outputStream));
-        
+
         return outputStream.toByteArray();
     }
     
@@ -228,15 +230,15 @@ public class ReceiverArinst22 {
     private static char[] getBufferData(byte[] streamOutput) {
         
         if (streamOutput.length > 0) {
-            String strData = new String(streamOutput, StandardCharsets.UTF_8);
+            String strData = new String(streamOutput);
             Integer scn22Index = strData.indexOf("scn22");
             Integer lastCompleteIndex = strData.lastIndexOf("complete");
             Boolean completed = scn22Index < lastCompleteIndex;
             
-            logger.debug("ReceiverArinst22 streamOutput buffer length : " + String.valueOf(streamOutput.length));
+            // logger.debug("ReceiverArinst22 streamOutput buffer length : " + String.valueOf(streamOutput.length));
             // logger.debug("ReceiverArinst22 streamOutput buffer strData : " + String.valueOf(strData));
-            logger.debug("ReceiverArinst22 streamOutput buffer strData scn22Index : " + String.valueOf(scn22Index));
-            logger.debug("ReceiverArinst22 streamOutput buffer strData lastComplete : " + String.valueOf(lastCompleteIndex));
+            // logger.debug("ReceiverArinst22 streamOutput buffer strData scn22Index : " + String.valueOf(scn22Index));
+            // logger.debug("ReceiverArinst22 streamOutput buffer strData lastComplete : " + String.valueOf(lastCompleteIndex));
             logger.debug("ReceiverArinst22 streamOutput buffer completed : " + String.valueOf(completed));
             
             if (scn22Index > 0) {
@@ -249,15 +251,24 @@ public class ReceiverArinst22 {
                     strBuffer = strBuffer.substring(newlineIndex + 2, completeIndex - 2);
                     char[] chrBuffer = strBuffer.toCharArray();
 
-                    logger.debug("ReceiverArinst22 streamOutput buffer chrBuffer : " + String.valueOf(chrBuffer));
+                    // logger.debug("ReceiverArinst22 streamOutput buffer chrBuffer : " + String.valueOf(chrBuffer));
                     
                     int listFrom = chrBuffer.length - 10 > 0 ? chrBuffer.length - 10 : 0;
-                    int listTo = chrBuffer.length - 1 > 10 ? 10 : chrBuffer.length - 1;
-                    
-                    for (int i = listFrom ; i < chrBuffer.length - 1 ; i += 1) {
-                        logger.debug("ReceiverArinst22 streamOutput strBuffer    (" + i +") : " + 
-                                    String.valueOf(chrBuffer[i]) + "    " +  String.valueOf((int)chrBuffer[i]) + "    "  + String.valueOf(Integer.toBinaryString(chrBuffer[i])));
-                    }
+                    int listTo = chrBuffer.length - 1 > 700 ? 700 : chrBuffer.length - 1;
+                  
+//                    for (int i = 0 ; i < listTo ; i += 1) {
+//                        logger.debug("ReceiverArinst22 streamOutput strBuffer Start   (" + i +") : " + 
+//                                    String.valueOf(chrBuffer[i]) + "    " +  String.valueOf((int)chrBuffer[i]) + "    "  + String.valueOf(Integer.toBinaryString(chrBuffer[i])));
+//                    }
+//                    for (int i = listFrom ; i < chrBuffer.length - 1 ; i += 1) {
+//                        logger.debug("ReceiverArinst22 streamOutput strBuffer Start   (" + i +") : " + 
+//                                    String.valueOf(chrBuffer[i]) + "    " +  String.valueOf((int)chrBuffer[i]) + "    "  + String.valueOf(Integer.toBinaryString(chrBuffer[i])));
+//                    }
+//                    
+//                    for (int i = chrBuffer.length - 1  ; i > listTo ; i -= 1) {
+//                        logger.debug("ReceiverArinst22 streamOutput strBuffer End   (" + i +") : " + 
+//                                    String.valueOf(chrBuffer[i]) + "    " +  String.valueOf((int)chrBuffer[i]) + "    "  + String.valueOf(Integer.toBinaryString(chrBuffer[i])));
+//                    }
                     return chrBuffer;
                 } else {
                     strBuffer = strBuffer.substring(newlineIndex + 2);
@@ -271,12 +282,17 @@ public class ReceiverArinst22 {
     
     private static List <Map<String, String>> processBufferData(char[] chrBuffer,  Long start, Long stop, Long step) {
         List <Map<String, String>> infoList = new ArrayList <Map<String, String>> ();
+//        for (int i = 0; i < chrBuffer.length - 1; i += 1) {
+//            
+//            logger.debug("ReceiverArinst22 scanData buffer strData : " + 
+//            String.valueOf(Byte.toUnsignedInt((byte)chrBuffer[i])) + "   " + String.valueOf(chrBuffer[i]));
+//        }     
         
         for (int i = 0; i < chrBuffer.length - 1 ; i += 2) {
             // logger.debug("ReceiverArinst22 scanData strBuffer    (" + i +") : " + String.valueOf(Integer.toBinaryString(chrBuffer[i])));
             // logger.debug("ReceiverArinst22 scanData strBuffer    (" + (int)(i + 1) + ") : " + String.valueOf(Integer.toBinaryString(chrBuffer[i+1])));
             
-            short value = (short) ((short) (chrBuffer[i] << 8) | ((short) chrBuffer[i+1] & 0xFF));
+            short value = (short) ((short)(Byte.toUnsignedInt((byte)chrBuffer[i]) << 8) | ((short) Byte.toUnsignedInt((byte)chrBuffer[i+1]) & 0xFF));
             // logger.debug("ReceiverArinst22 scanData strBuffer  value   : " + String.valueOf(Integer.toBinaryString(value)));
             // logger.debug("ReceiverArinst22 scanData strBuffer  value   : " + String.valueOf(value));
             
@@ -286,14 +302,14 @@ public class ReceiverArinst22 {
             // Integer index = ((value & INDEX_MASK) >> 11);
             // logger.debug("ReceiverArinst22 scanData strBuffer  value  INDEX_MASK : " + String.valueOf(index) + "     " + String.valueOf(Integer.toBinaryString(index)));
 
-            double amplitude =  (double) (((10.0 * 80 - (double) (data)) / 10.0));
+            double amplitude =  (double) (((10.0 * 80.0 - (double) (data)) / 10.0));
             long frequency = start + (i * step) / 2;  // result is returned not in a row
             
             if (frequency - stop  > 0) {
                 break;
             }
             
-            // logger.debug("ReceiverArinst22 scanData amplitude : " + String.valueOf(amplitude));
+            logger.debug("ReceiverArinst22 scanData amplitude : " + String.valueOf(String.format("%.5f", amplitude)));
             // logger.debug("ReceiverArinst22 scanData frequency : " + String.valueOf(frequency));
             // logger.debug("ReceiverArinst22 scanData stop      : " + String.valueOf(stop));
             

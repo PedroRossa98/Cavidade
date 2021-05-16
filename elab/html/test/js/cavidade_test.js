@@ -2,7 +2,7 @@
 console.log('Cavidade', env.IP, env.USER, env.HOSTNAME);
 
 //set RPi static IP
-var rpiRJ45IP = '192.168.1.81';  //RJ45
+var rpiRJ45IP = '192.168.1.84';  //RJ45
 var rpiWIFIIP = '192.168.1.82';  //WIFI
 var rpiIP = rpiRJ45IP;
 var openValvuleTime = 100;

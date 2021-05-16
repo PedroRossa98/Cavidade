@@ -2,7 +2,7 @@
 console.log('Cavidade', env.IP, env.USER, env.HOSTNAME);
 
 // set RPi static IP
-var rpiRJ45IP = '192.168.1.81';  // RJ45
+var rpiRJ45IP = '192.168.1.84';  // RJ45
 var rpiWIFIIP = '192.168.1.82';  // WIFI
 var rpiIP = rpiRJ45IP;
 var openValvuleTime = 100;
@@ -47,9 +47,28 @@ let myVar = setInterval(myTimer, 1000);
 //         }
 //     }
 // });
+
 function rand() {
-  return Math.random();
+  var reg = new RegExp('^[0-9\.]+$', 'g');
+  //var xmlHttp = getPressure();
+//  setTimeout(() => {
+//      console.log(" xmlHttp: ", xmlHttp);
+//      console.log(" response: ", xmlHttp.response);
+//      var response = JSON.parse(xmlHttp.response);
+//      var pressure = response.pressure;
+//    }, 1000);
+
+  var pressure = document.getElementById('pressure').innerHTML.substring(17, 22);
+  console.log(" Pressao: ", pressure);
+  var result1 = (pressure.length > 1 && !isNaN(pressure)) ;
+  console.log("Result: ", result1," Pressao: ", pressure," primeiro: ", pressure.length," segundo: ", !isNaN(pressure), " treceiro: ", reg.test(pressure));
+  if (result1) {
+     return pressure;
+  }
+
+  return 0;
 }
+
 
 Plotly.plot('graph', [{
   y: [1].map(rand),
@@ -109,7 +128,7 @@ function putGPIO() {
 }
 
 function getPressure() {
-	var url = 'http://' + rpiIP + '/elab/pressure';
+	var url = 'http://' + rpiIP + '/comm/pressure';
 	$.ajax({
       url: url,      //Your api url
       type: 'GET',   //type is any HTTP method
@@ -117,8 +136,8 @@ function getPressure() {
         data: null
       },      //Data as js object
       success: function (response) {
-		console.log('GET Response Result : ' +  response.result);
-		document.getElementById('pressure').innerHTML = 'Pressure [mbar]: ' + response.pressure;
+		console.log('GET Response Result : ' +  parseInt(response,10)*1000.0);
+		document.getElementById('pressure').innerHTML = 'Pressure [mbar]: ' + parseInt(response,10)*1000.0;
       }
     });
 }

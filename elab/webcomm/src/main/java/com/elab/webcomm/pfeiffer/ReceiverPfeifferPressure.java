@@ -5,7 +5,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,16 +20,16 @@ public class ReceiverPfeifferPressure {
 
     private static final String requestPattern = "%1$03d00%2$03d02=?";   // {:03d}00{:03d}02=?
     
-    private static final int PORT_RETRY_TIMES = 20;
+    private static final int PORT_RETRY_TIMES  = 20;
     
     
     private static final Integer BAUDRATE_9600 = 9600;
-    private static final Integer DATABITS_8 = 8;
-    private static final Integer STOPBITS_1 = SerialPort.ONE_STOP_BIT;
-    private static final Integer PARITY_NONE = SerialPort.NO_PARITY;
-    private static final Boolean RS485_MODE = true;
+    private static final Integer DATABITS_8    = 8;
+    private static final Integer STOPBITS_1    = SerialPort.ONE_STOP_BIT;
+    private static final Integer PARITY_NONE   = SerialPort.NO_PARITY;
+    private static final Boolean RS485_MODE    = true;
     
-    private static final int PRESSURE                  = 740;
+    private static final int    PRESSURE       = 740;
     
     
     public static Double execReadPressure() {
@@ -101,6 +103,11 @@ public class ReceiverPfeifferPressure {
             
             boolean opened = serialPort.openPort();
             
+            if (!opened) {
+                logger.debug("ReceiverArinst22 : unable to open port : " + String.valueOf(port));
+                return -1.0;
+            }
+            
             serialPort.setComPortParameters(
                     BAUDRATE_9600,
                     DATABITS_8,
@@ -108,6 +115,14 @@ public class ReceiverPfeifferPressure {
                     PARITY_NONE,
                     RS485_MODE
                 );
+ 
+            final int stale = serialPort.bytesAvailable();
+            
+            if (stale > 0) {
+                logger.debug("ReceiverPfeifferPressure flushing " + String.valueOf(stale) + " stale bytes...");
+                serialPort.readBytes(new byte[stale], stale);
+            }
+ 
             
             String command = String.format(
                     requestPattern,

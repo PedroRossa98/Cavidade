@@ -5,11 +5,11 @@ com/elab/webcomm/arinst/IStreamReceiverArinst.class
 com/elab/webcomm/arinst/IStreamReceiverArinstImpl.class
 com/elab/webcomm/pfeiffer/ReceiverPfeifferPressure.class
 com/elab/webcomm/pfeiffer/IStreamReceiverPfeifferImpl.class
-com/elab/webcomm/controller/SerialController.class
 com/elab/webcomm/pfeiffer/ReceiverPfeiffer.class
+com/elab/webcomm/controller/SerialController.class
 com/elab/webcomm/utils/AESUtils.class
-com/elab/webcomm/usb/UsbDataProvider.class
 com/elab/webcomm/entity/ArinstParamScan.class
+com/elab/webcomm/usb/UsbDataProvider.class
 com/elab/webcomm/gpio/RPiGPIO.class
 com/elab/webcomm/utils/CSVWriterUtils.class
 com/elab/webcomm/pfeiffer/IStreamReceiverPfeiffer.class
