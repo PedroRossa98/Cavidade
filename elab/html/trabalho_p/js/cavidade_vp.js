@@ -17,8 +17,11 @@ var start_f = "3306000000"
 var stop_f = "3891000000"
 var step_f = "500000"
 var n_itera = "5"
+var descarga = 1
+var bomba = 1
+var valvula_vacu = 1
 var file_names = null;
-
+var state = null;
 let myPressure_1 = setInterval(getPressure,100)
 //let myPressure_1 = null;
 
@@ -70,10 +73,21 @@ function myStartFunction() {
   myPressure_1 = setInterval(getPressure,100)
 }
 
-function putGPIO() {
+function putGPIO(Pin) {
     time = $("#time").val();
-	var url = 'http://' + rpiIP + ':8085/gpio/switch?pin=4&status=on&time=' + time;
-	var url = 'http://' + rpiIP + '/elab/gpio/switch?pin=4&status=on&time=' + time;
+	if (Pin == 5){
+        	descarga= 1-descarga;
+		time = descarga
+	}
+        if (Pin == 12){
+                bomba= 1-bomba;
+                time = bomba
+        }
+        if (Pin == 13){
+                time = $("#time_vacuo").val();
+        }
+	//var url = 'http://' + rpiIP + ':8085/gpio/switch?pin=4&status=on&time=' + time;
+	var url = 'http://' + rpiIP + '/elab/gpio/switch?pin='+Pin+'&status=on&time=' + time;
     console.log('Button pressed time : ' +  time);
 	$.ajax({
       url: url,      //Your api url
@@ -156,7 +170,14 @@ function putArinst() {
 		var dados_0 = response.map(data => data[keys[0]]);
 		console.log('PUT Response Pin :____ ' + dados_0[2] );
 		desenharCSV(response);
-		//buildTable(response);
+		state = {
+  		 'querySet': response,
+
+                 'page': 1,
+                 'rows': 200,
+                 'window': 5,
+                }
+		buildTable();
       }
     });
 }
@@ -366,7 +387,7 @@ function desenharCSV(results) {
 }
 
 
-function buildTable(response){
+function buildTable_antiga(response){
 			var table = document.getElementById('myTable');
 			var keys = Object.keys(response[0]);
 			var key_n = [];
@@ -405,8 +426,108 @@ function buildTable(response){
 			}); */
 			
 		
-	}
+}
 
+
+function pagination(querySet, page, rows) {
+
+  var trimStart = (page - 1) * rows;
+  var trimEnd = trimStart + rows;
+
+  var trimmedData = querySet.slice(trimStart, trimEnd);
+
+  var pages = Math.round(querySet.length / rows);
+
+  return {
+    'querySet': trimmedData,
+    'pages': pages,
+  }
+}
+
+
+function pageButtons(pages) {
+  var wrapper = document.getElementById('pagination-wrapper');
+
+  wrapper.innerHTML = ``;
+  console.log('Pages:', pages);
+
+  var maxLeft = (state.page - Math.floor(state.window / 2));
+  var maxRight = (state.page + Math.floor(state.window / 2));
+
+  if (maxLeft < 1) {
+    maxLeft = 1;
+    maxRight = state.window;
+  }
+
+  if (maxRight > pages) {
+    maxLeft = pages - (state.window - 1);
+
+    if (maxLeft < 1) {
+      maxLeft = 1;
+    }
+    maxRight = pages;
+  }
+
+
+
+  for (var page = maxLeft; page <= maxRight; page++) {
+    wrapper.innerHTML += `<button value=${page} class="page btn btn-lg btn-info">${page}</button>`
+  }
+
+  if (state.page != 1) {
+    wrapper.innerHTML = `<button value=${1} class="page btn btn-lg btn-info">&#171; First</button>` + wrapper.innerHTML
+  }
+
+  if (state.page != pages) {
+    wrapper.innerHTML += `<button value=${pages} class="page btn btn-lg btn-info">Last &#187;</button>`
+  }
+
+  $('.page').on('click', function() {
+    $('#myTable').empty();
+
+    state.page = Number($(this).val());
+
+    buildTable();
+  });
+
+}
+
+function buildStateTable(state){
+  return state
+}
+
+function buildTable() {
+  var table = $('#myTable');
+
+  var data = pagination(state.querySet, state.page, state.rows);
+  var myList = data.querySet;
+
+  var keys = Object.keys(myList[0]);
+  var key_n = [];
+  key_n.push(keys[keys.length-1]);
+  key_n = key_n.concat(keys.splice(0,keys.length-1));
+  console.log(key_n);
+  var pacrow = '<tr  class="bg-info" style="white-space: pre-line;">';
+  Object(key_n).forEach((key_n) => {
+      pacrow += '<th>'+key_n+'</th>';
+      });
+  pacrow+='</tr>';
+  table.append(pacrow);
+
+   pacrow = '<tr>';
+   Object(myList).forEach((row) => {
+     pacrow = '<tr>';
+     Object.values(key_n).forEach((key) => {
+       pacrow+='<td>'+row[key]+'</td>';
+     });
+     pacrow+='</tr>';
+     //console.log(pacrow);
+     table.append(pacrow);
+   });
+
+
+  pageButtons(data.pages);
+}
 
 
 

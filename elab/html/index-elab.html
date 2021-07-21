@@ -108,7 +108,7 @@ var rpiBeamPlasma = '127.0.0.1:8085'
 var rpiIP =  rpiBeamPlasma;
 var openValvuleTime = 100;
 
-var time = "Inserir o tempo (s)"
+//var time = "Inserir o tempo (s)"
 
 var reg = new RegExp('^[0-9\.]+$', 'g');
 
@@ -217,7 +217,7 @@ function myStartFunction() {
 function putGPIO() {
     time = $("#time").val();
 	// var url = 'http://' + rpiIP + ':8085/gpio/switch?pin=4&status=on&time=' + time;
-	var url = 'http://' + rpiIP + '/elab/gpio/switch?pin=4&status=on&time=' + time;
+	var url = 'http://' + rpiIP + '/elab/gpio/switch?pin=17&status=on&time=' + time;
     console.log('Button pressed time : ' +  time);
 	$.ajax({
       url: url,      //Your api url
@@ -251,7 +251,7 @@ function getPressure() {
 }
 
 $(document).ready(function(){
-  $("input:text").val(time);
+  //$("input:text").val(time);
 
 	function startReadPresssure(times) {
 	  let numberSelected = 0;
