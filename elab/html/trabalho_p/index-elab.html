@@ -2,6 +2,7 @@
 <head>
 <meta charset="UTF-8">
 <title>E Lab</title>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
 <link rel="shortcut icon" type="image/png" href="">
 <link rel="shortcut icon" href="http://e-lab.ist.eu/rec.web/faviconElab.ico">
@@ -9,13 +10,16 @@
 <link rel="stylesheet" href="css/toggle-button.css">
 <link rel="stylesheet" href="css/tool-bar.css">
 
-<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
 <script src="https://d3js.org/d3.v6.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src='https://cdn.plot.ly/plotly-latest.min.js'></script>
 <script src ='https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js'></script>
 <script src ='https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.20/c3.min.js'></script>
 <script src ='https://cdnjs.cloudflare.com/ajax/libs/jquery-replace-text/1.1.0/jquery-replace-text-min.js'></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+
+
 
 <!-- <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.3"></script> -->
 <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
@@ -68,6 +72,10 @@
 				<div>
 					<label id="pressure"><b>Pressure : </label>
 				</div>
+                                    <p class="sansserif">Tempo :
+		                     	<input id="time" type="text" name="time"/>
+			                <button id="button_Send_gas" onclick="putGPIO(17)">Ligar GPIO</button>
+		                    </p>                                    
 			
 				
 				
@@ -93,7 +101,36 @@
 						<input id="n_itera" type="text" name="n_itera" placeholder="5"/>
 					</p>
 				</div>
-				
+				<label class="switch">
+					<input type="checkbox" id="togBtnDescarga" onclick="putGPIO(5)">
+					 <div class="slider round">
+					  <!--ADDED HTML -->
+						  <span class="on">LIGAR</span>
+						  <span class="off">DESLIGAR</span>
+					  <!--END-->
+					 </div>
+				</label>
+                                <label class="switch">
+                                        <input type="checkbox" id="topBtnBomba" onclick="putGPIO(12)">
+                                         <div class="slider round">
+                                          <!--ADDED HTML -->
+                                                  <span class="on">LIGAR</span>
+                                                  <span class="off">DESLIGAR</span>
+                                          <!--END-->
+                                         </div>
+                                </label>
+                                <div style="margin-left: 30px;">
+					<div>
+                                        	<label id="vacuo"><b>Valvula do Vacuo : </label>
+                               		</div>
+                                  
+                                   	 <p class="sansserif">Tempo :
+                                        	<input id="time_vacuo" type="text" name="time_v"/>
+                                        	<button id="button_vacuo_valv_on" onclick="putGPIO(13)">Ligar Valvula de Vacuo</button>
+                                    	</p>
+				 </div>
+
+                                              
 				<div class="sansserif" style="margin-left: 30px;">
 				
 					<div>
@@ -106,12 +143,12 @@
 				
 				</div>
 			</td>
-			<td  colspan="3" rowspan="2">
+			<td  colspan="2" rowspan="2">
 			
 				<!-- <div style="margin-left: 50px; width: 1000px;">
 					<canvas id="graph_1"  width="500" height="200"></canvas>
 				</div> -->
-					<div id='graph' style="margin-left: 100px; width: 1000px;">
+					<div id='graph' style="margin-left: 5px; width: 1000px;">
 					</div>
 				<hr/>
 				<br/>
@@ -120,21 +157,15 @@
 			
 		  </tr>
 		  <tr>
-			<td class="tg-0pky">
-				<!-- <div id="newButtons">
-				</div> -->
-			</td>
-		  </tr>
-		  <tr>
-			<td class="tg-0pky" colspan="2" rowspan="2">
-				
-			</td>
-			<td class="tg-0pky" colspan="2" rowspan="2">
-				<table class="table table-striped" style="margin-left: 200px; width: 800px;">
+			<td class="tg-0pky" colspan="2" rowspan="4">
+				<table class="table table-striped" style="margin-left: 400px; width: 1000px;">
 					<tbody id="myTable" >
 					</tbody>
 				</table>
-			</td>
+                        <div class="container ">
+                           <div id="pagination-wrapper"style="margin-left: 200px;"></div>
+                        </div>
+                     </td>
 		  </tr>
 		  <tr>
 		  </tr>

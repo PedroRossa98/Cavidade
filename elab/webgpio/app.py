@@ -84,7 +84,7 @@ def gpio_switch():
         print (request.args.get('status'))
         print (request.args.get('time'))
 
-        val.open_valvulas(17, request.args.get('time'))
+        val.open_valvulas(request.args.get('pin'), request.args.get('time'))
 
         return jsonify({'pin' : request.args.get('pin'), 'result': 'OK!'})
 
