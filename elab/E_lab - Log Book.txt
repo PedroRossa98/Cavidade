@@ -49,6 +49,12 @@ Nginx
 https://www.raspberrypi.org/documentation/remote-access/web-server/nginx.md
 PHP not installed
 sudo nano /etc/nginx/sites-enabled/default
+location / {
+       # First attempt to serve request as file, then
+       # as directory, then fall back to displaying a 404.
+       try_files $uri $uri/ =404;
+}
+
 
 https://www.digitalocean.com/community/tutorials/how-to-move-an-nginx-web-root-to-a-new-location-on-ubuntu-18-04
 sudo nginx -t
